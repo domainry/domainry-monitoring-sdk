@@ -14,3 +14,14 @@ SaaS configuration:
 - `DOMAINRY_MONITORING_TIMEOUT`: optional Go duration, default `10s`.
 
 Runtime stores and credentials are never exposed through the host contract. Only owner-produced monitoring observations cross the boundary.
+
+## Package layout
+
+- The root package is the stable Monitoring `Factory` and `Binding` entrypoint.
+- `contract` contains monitoring observations and deployment-neutral values.
+- `modulehost` describes sanitized observations, readiness, and embedded storage infrastructure.
+- `remote` implements the SaaS client; `saashost` describes SaaS composition.
+
+The SDK intentionally has no public `persistence` package. Monitoring storage is an embedded-host capability, not a Runtime-consumable repository.
+
+Run `go test ./...` before publishing an immutable SDK version.
