@@ -11,13 +11,13 @@ func TestMonitoringHTTPSurfaceContractIsCompleteAndSourceOwned(t *testing.T) {
 		t.Fatalf("Monitoring HTTP routes=%d", len(contract.Routes))
 	}
 	route := contract.Routes[0]
-	if route.Pattern != "GET /operations/monitoring/metrics" || len(route.Exposures) != 1 || route.Exposures[0] != "ops" {
+	if route.Pattern() != "GET /operations/monitoring/metrics" || len(route.Action.Exposures) != 1 || route.Action.Exposures[0] != "ops" {
 		t.Fatalf("Monitoring HTTP route=%#v", route)
 	}
-	if route.EffectClass != "read" || route.IdempotencyDecision != "not_applicable" || route.AuditClass == "" || len(route.AnyPermissions) != 2 {
+	if route.Action.EffectClass != "read" || route.Action.IdempotencyDecision != "not_applicable" || route.Action.AuditClass == "" || route.Action.Permission == nil || route.Action.Permission.Key != route.Action.Key {
 		t.Fatalf("incomplete Monitoring route policy: %#v", route)
 	}
-	operation := contract.OpenAPI[route.Pattern]
+	operation := contract.OpenAPIOperations()[route.Pattern()]
 	if operation["operationId"] != "getMonitoringMetrics" || operation["responses"] == nil {
 		t.Fatalf("incomplete Monitoring OpenAPI operation: %#v", operation)
 	}
