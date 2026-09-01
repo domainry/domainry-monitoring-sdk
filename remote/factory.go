@@ -11,16 +11,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/domainry/domainry-foundation/modulecapability"
 	monitoringsdk "github.com/domainry/domainry-monitoring-sdk"
 	"github.com/domainry/domainry-monitoring-sdk/modulehost"
 	"github.com/domainry/domainry-monitoring-sdk/saashost"
 )
 
 type Config struct {
-	Endpoint string
-	Token    string
-	Timeout  time.Duration
-	Client   *http.Client
+	Endpoint                 string
+	Token                    string
+	Timeout                  time.Duration
+	Client                   *http.Client
+	CapabilityContractSHA256 string
 }
 
 func ConfigFromEnvironment() Config {
@@ -30,7 +32,10 @@ func ConfigFromEnvironment() Config {
 			timeout = parsed
 		}
 	}
-	return Config{Endpoint: strings.TrimRight(strings.TrimSpace(os.Getenv("DOMAINRY_MONITORING_ENDPOINT")), "/"), Token: strings.TrimSpace(os.Getenv("DOMAINRY_MONITORING_TOKEN")), Timeout: timeout}
+	return Config{
+		Endpoint: strings.TrimRight(strings.TrimSpace(os.Getenv("DOMAINRY_MONITORING_ENDPOINT")), "/"), Token: strings.TrimSpace(os.Getenv("DOMAINRY_MONITORING_TOKEN")), Timeout: timeout,
+		CapabilityContractSHA256: strings.TrimSpace(os.Getenv("DOMAINRY_MONITORING_CAPABILITY_CONTRACT_SHA256")),
+	}
 }
 
 type Factory struct{ config Config }
@@ -43,6 +48,9 @@ func (*Factory) Open(context.Context, monitoringsdk.ApplicationRef) (monitorings
 
 func (f *Factory) OpenSaaS(ctx context.Context, application monitoringsdk.ApplicationRef, host modulehost.Host) (monitoringsdk.Binding, error) {
 	if err := application.Validate(); err != nil {
+		return nil, err
+	}
+	if err := modulecapability.ValidateRemoteExpectation("monitoring", f.config.CapabilityContractSHA256); err != nil {
 		return nil, err
 	}
 	if host == nil || host.Storage() == nil || host.Migration() == nil || host.Scheduler() == nil || host.Lifecycle() == nil || host.Metrics() == nil {
@@ -71,7 +79,20 @@ func (f *Factory) OpenSaaS(ctx context.Context, application monitoringsdk.Applic
 	if descriptor.Mode != monitoringsdk.DeploymentModeSaaS {
 		return nil, fmt.Errorf("Monitoring endpoint is not SaaS")
 	}
+	capability, err := modulecapability.OpenRemote(ctx, modulecapability.RemoteConfig{
+		BaseURL: endpoint, Client: client, ExpectedModuleKey: "monitoring", ExpectedContractSHA256: f.config.CapabilityContractSHA256,
+		Authorize: func(request *http.Request) error {
+			if binding.token != "" {
+				request.Header.Set("Authorization", "Bearer "+binding.token)
+			}
+			return nil
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 	binding.descriptor = descriptor
+	binding.capability = capability
 	return binding, nil
 }
 
@@ -82,6 +103,17 @@ type remoteBinding struct {
 	client          *http.Client
 	timeout         time.Duration
 	descriptor      monitoringsdk.Descriptor
+	capability      modulecapability.Binding
+}
+
+func (b *remoteBinding) CapabilitySummary(ctx context.Context) (modulecapability.ModuleSummary, error) {
+	return b.capability.CapabilitySummary(ctx)
+}
+func (b *remoteBinding) CapabilityCategory(ctx context.Context, key string) (modulecapability.CategoryDocument, error) {
+	return b.capability.CapabilityCategory(ctx, key)
+}
+func (b *remoteBinding) ValidateCapabilityCandidate(ctx context.Context, request modulecapability.ValidationRequest) (modulecapability.ValidationResult, error) {
+	return b.capability.ValidateCapabilityCandidate(ctx, request)
 }
 
 func (b *remoteBinding) Descriptor() monitoringsdk.Descriptor { return b.descriptor }
