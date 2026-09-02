@@ -47,7 +47,7 @@ func MonitoringHTTPSurfaceContract() HTTPSurfaceContract {
 				OperationKey: "read", OperationLabel: "Read monitoring metrics", Label: "Read monitoring metrics", Exposures: []actioncontract.Exposure{actioncontract.ExposureOps},
 				Authorization: actioncontract.Authorization{Strategy: actioncontract.AuthorizationExactRolePermission},
 				HTTP:          &actioncontract.HTTPBinding{Method: "GET", RouteTemplate: "/operations/monitoring/metrics"},
-				Permission:    &actioncontract.PermissionDefinition{Key: ActionMonitoringMetricsRead, Owner: "module:monitoring", ResourceKey: "monitoring.metrics", ActionKey: "read", Label: "Read monitoring metrics", Category: "Monitoring", LifecycleStatus: actioncontract.LifecycleActive},
+				Permission:    &actioncontract.PermissionDefinition{Key: ActionMonitoringMetricsRead, Owner: "module:monitoring", ResourceKey: "monitoring.metrics", OperationKey: "read", Label: "Read monitoring metrics", Category: "Monitoring", LifecycleStatus: actioncontract.LifecycleActive},
 				EffectClass:   actioncontract.EffectRead, RiskLevel: actioncontract.RiskLow, IdempotencyDecision: "not_applicable", AuditClass: "monitoring_owner_read", LifecycleStatus: actioncontract.LifecycleActive,
 			},
 			OpenAPIOperation: map[string]any{
