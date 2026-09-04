@@ -119,14 +119,14 @@ func (b *remoteBinding) ValidateCapabilityCandidate(ctx context.Context, request
 func (b *remoteBinding) Descriptor() monitoringsdk.Descriptor { return b.descriptor }
 func (b *remoteBinding) Health(ctx context.Context) map[string]any {
 	result := map[string]any{}
-	if err := b.post(ctx, "/v1/health", modulehost.CollectHealth(ctx, b.application.RuntimeID, b.host), &result); err != nil {
+	if err := b.post(ctx, "/monitoring/v1/health", modulehost.CollectHealth(ctx, b.application.RuntimeID, b.host), &result); err != nil {
 		return map[string]any{"status": "degraded", "runtime_id": b.application.RuntimeID, "checks": map[string]string{"monitoring_saas": "error"}, "errors": map[string]string{"monitoring_saas": err.Error()}}
 	}
 	return result
 }
 func (b *remoteBinding) Metrics(ctx context.Context) map[string]any {
 	result := map[string]any{}
-	if err := b.post(ctx, "/v1/metrics", modulehost.CollectMetrics(ctx, b.application.RuntimeID, b.host), &result); err != nil {
+	if err := b.post(ctx, "/monitoring/v1/metrics", modulehost.CollectMetrics(ctx, b.application.RuntimeID, b.host), &result); err != nil {
 		return map[string]any{"runtime_id": b.application.RuntimeID, "errors": map[string]string{"monitoring_saas": err.Error()}}
 	}
 	return result
@@ -146,7 +146,7 @@ func (b *remoteBinding) fetchDescriptor(ctx context.Context) (monitoringsdk.Desc
 	var descriptor monitoringsdk.Descriptor
 	requestCtx, cancel := context.WithTimeout(ctx, b.timeout)
 	defer cancel()
-	request, err := b.request(requestCtx, http.MethodGet, "/v1/descriptor", nil)
+	request, err := b.request(requestCtx, http.MethodGet, "/monitoring/v1/descriptor", nil)
 	if err != nil {
 		return descriptor, err
 	}
