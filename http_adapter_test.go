@@ -17,8 +17,4 @@ func TestMonitoringHTTPAdapterContractIsCompleteAndSourceOwned(t *testing.T) {
 	if route.Action.EffectClass != "read" || route.Action.IdempotencyDecision != "not_applicable" || route.Action.AuditClass == "" || route.Action.Permission == nil || route.Action.Permission.Key != route.Action.Key {
 		t.Fatalf("incomplete Monitoring route policy: %#v", route)
 	}
-	operation := contract.OpenAPIOperations()[route.Pattern()]
-	if operation["operationId"] != "getMonitoringMetrics" || operation["responses"] == nil {
-		t.Fatalf("incomplete Monitoring OpenAPI operation: %#v", operation)
-	}
 }

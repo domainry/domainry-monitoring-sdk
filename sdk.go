@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
-	"github.com/domainry/domainry-foundation/modulecapability"
 )
 
 type DeploymentMode string
@@ -51,7 +49,6 @@ type Factory interface {
 // Binding is the sole Runtime-facing monitoring capability. Implementations
 // may run in-process or remotely without changing Runtime transports.
 type Binding interface {
-	modulecapability.Binding
 	Descriptor() Descriptor
 	Health(context.Context) map[string]any
 	Metrics(context.Context) map[string]any
