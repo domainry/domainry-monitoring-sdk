@@ -2,7 +2,7 @@ module github.com/domainry/domainry-monitoring-sdk
 
 go 1.26.0
 
-require github.com/domainry/domainry-foundation v0.2.0
+require github.com/domainry/domainry-foundation v0.2.9
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
