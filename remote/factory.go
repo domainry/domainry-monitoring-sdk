@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/domainry/domainry-foundation/telemetry"
 	monitoringsdk "github.com/domainry/domainry-monitoring-sdk"
 	"github.com/domainry/domainry-monitoring-sdk/modulehost"
 	"github.com/domainry/domainry-monitoring-sdk/saashost"
@@ -62,7 +63,7 @@ func (f *Factory) OpenSaaS(ctx context.Context, application monitoringsdk.Applic
 	if client == nil {
 		client = &http.Client{Timeout: timeout}
 	}
-	binding := &remoteBinding{application: application, host: host, endpoint: endpoint, token: strings.TrimSpace(f.config.Token), client: client, timeout: timeout}
+	binding := &remoteBinding{application: application, host: host, endpoint: endpoint, token: strings.TrimSpace(f.config.Token), client: telemetry.InstrumentHTTPClient(client, "github.com/domainry/domainry-monitoring-sdk/remote"), timeout: timeout}
 	descriptor, err := binding.fetchDescriptor(ctx)
 	if err != nil {
 		return nil, err
@@ -161,6 +162,7 @@ func (b *remoteBinding) post(ctx context.Context, path string, input, output any
 }
 
 func (b *remoteBinding) request(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
+	ctx = telemetry.WithHTTPClientOperation(ctx, "monitoring.remote")
 	request, err := http.NewRequestWithContext(ctx, method, b.endpoint+path, body)
 	if err != nil {
 		return nil, err
