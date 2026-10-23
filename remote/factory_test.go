@@ -18,7 +18,7 @@ import (
 	apitrace "go.opentelemetry.io/otel/trace"
 )
 
-func TestRemoteFactoryPropagatesTraceAndCorrelationWithoutRequestIdentity(t *testing.T) {
+func TestRemoteFactoryPropagatesOneTraceIdentityWithoutBusinessCorrelation(t *testing.T) {
 	provider := sdktrace.NewTracerProvider()
 	previousProvider := otel.GetTracerProvider()
 	otel.SetTracerProvider(provider)
@@ -32,7 +32,7 @@ func TestRemoteFactoryPropagatesTraceAndCorrelationWithoutRequestIdentity(t *tes
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		observed <- observedHeaders{
 			traceparent:   request.Header.Get("traceparent"),
-			correlationID: request.Header.Get(telemetry.CorrelationIDHeader),
+			correlationID: request.Header.Get("X-Correlation-ID"),
 			requestID:     request.Header.Get(telemetry.RequestIDHeader),
 		}
 		response.Header().Set("Content-Type", "application/json")
@@ -43,7 +43,6 @@ func TestRemoteFactoryPropagatesTraceAndCorrelationWithoutRequestIdentity(t *tes
 	traceID, _ := apitrace.TraceIDFromHex("4bf92f3577b34da6a3ce929d0e0e4736")
 	spanID, _ := apitrace.SpanIDFromHex("00f067aa0ba902b7")
 	ctx := apitrace.ContextWithSpanContext(t.Context(), apitrace.NewSpanContext(apitrace.SpanContextConfig{TraceID: traceID, SpanID: spanID, TraceFlags: apitrace.FlagsSampled}))
-	ctx = requestcontext.WithCorrelationID(ctx, "correlation-a")
 	ctx = requestcontext.WithRequestID(ctx, "runtime-request")
 	if _, err := NewFactory(Config{Endpoint: server.URL, Token: "secret", Client: server.Client()}).OpenSaaS(ctx, monitoringsdk.ApplicationRef{RuntimeID: "runtime"}, remoteTestHost{}); err != nil {
 		t.Fatal(err)
@@ -52,11 +51,11 @@ func TestRemoteFactoryPropagatesTraceAndCorrelationWithoutRequestIdentity(t *tes
 	if len(headers.traceparent) != 55 || headers.traceparent[3:35] != traceID.String() {
 		t.Fatalf("traceparent=%q", headers.traceparent)
 	}
-	if headers.correlationID != "correlation-a" {
+	if headers.correlationID != "" {
 		t.Fatalf("correlation id=%q", headers.correlationID)
 	}
-	if headers.requestID != "" {
-		t.Fatalf("request id crossed service boundary: %q", headers.requestID)
+	if headers.requestID != traceID.String() {
+		t.Fatalf("request/trace alias=%q want=%q", headers.requestID, traceID.String())
 	}
 }
 
