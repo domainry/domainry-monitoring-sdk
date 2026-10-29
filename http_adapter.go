@@ -38,8 +38,17 @@ func MonitoringHTTPAdapterContract() HTTPAdapterContract {
 				OperationKey: "read", OperationLabel: "Read monitoring metrics", Label: "Read monitoring metrics", Exposures: []actioncontract.Exposure{actioncontract.ExposureOps},
 				Authorization: actioncontract.Authorization{Strategy: actioncontract.AuthorizationAuthenticated},
 				HTTP:          &actioncontract.HTTPBinding{Method: "GET", RouteTemplate: "/monitoring/metrics"},
-				Permission:    &actioncontract.PermissionDefinition{Key: ActionMonitoringMetricsRead, Owner: "module:monitoring", ResourceKey: "monitoring.metrics", OperationKey: "read", Label: "Read monitoring metrics", Category: "Monitoring", LifecycleStatus: actioncontract.LifecycleActive},
-				EffectClass:   actioncontract.EffectRead, RiskLevel: actioncontract.RiskLow, IdempotencyDecision: "not_applicable", AuditClass: "monitoring_owner_read", LifecycleStatus: actioncontract.LifecycleActive,
+				Permission: &actioncontract.PermissionDefinition{
+					Key: ActionMonitoringMetricsRead, Owner: "module:monitoring", ModuleKey: "monitoring", GroupKey: "monitoring.metrics",
+					ResourceKey: "monitoring.metrics", OperationKey: "read", Label: "Read monitoring metrics", Category: "Monitoring",
+					GrantMode: actioncontract.PermissionGrantInternal, ScopeKind: actioncontract.PermissionScopeNone, DefaultLocale: "en",
+					I18n: actioncontract.PermissionLocalizedText{
+						"en":    {ModuleLabel: "Monitoring", GroupLabel: "Runtime metrics", ResourceLabel: "Monitoring metrics", OperationLabel: "View", Label: "View monitoring metrics", Description: "Allows viewing Runtime health and performance metrics."},
+						"zh-CN": {ModuleLabel: "监控", GroupLabel: "运行指标", ResourceLabel: "监控指标", OperationLabel: "查看", Label: "查看监控指标", Description: "允许查看 Runtime 的健康状态与性能指标。"},
+					},
+					LifecycleStatus: actioncontract.LifecycleActive,
+				},
+				EffectClass: actioncontract.EffectRead, RiskLevel: actioncontract.RiskLow, IdempotencyDecision: "not_applicable", AuditClass: "monitoring_owner_read", LifecycleStatus: actioncontract.LifecycleActive,
 			},
 		}},
 	}
